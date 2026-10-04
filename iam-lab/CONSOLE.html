@@ -10,6 +10,8 @@
   <script src="iam-engine.js" defer></script>
   <script src="visual-summaries.js" defer></script>
   <script src="console-engine.js" defer></script>
+  <script src="console-objectives.js" defer></script>
+  <script src="policy-editor.js" defer></script>
   <script src="console-app.js" defer></script>
 </head>
 <body>
@@ -20,6 +22,8 @@
     <form id="service-search"><label class="sr-only" for="service-query">Find a service</label><input id="service-query" type="search" list="service-list" placeholder="Search IAM, S3, EC2…"><datalist id="service-list"><option value="IAM users"></option><option value="IAM user groups"></option><option value="IAM policies"></option><option value="IAM roles"></option><option value="S3 buckets"></option><option value="EC2 instances"></option></datalist><button type="submit">Go</button></form>
     <span class="region">Singapore<br><small>ap-southeast-1</small></span>
     <div class="identity-control"><label for="identity">Practice as identity</label><select id="identity"></select></div>
+    <button type="button" data-action="reset" class="reset-practice">Reset practice</button>
+    <a class="button" href="../vpc-lab/index.html" target="_blank" rel="noopener">Lab 02 · Networking ↗</a>
   </header>
   <div id="storage-warning" class="notice warning" role="alert" hidden></div>
   <div class="console-layout">

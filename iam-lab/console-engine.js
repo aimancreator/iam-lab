@@ -105,11 +105,14 @@
     instance.profile = roleName || "";
   }
 
-  function editTrust(state, name, trustedUser) {
+  function editTrust(state, name, trustedUser, trust = "user") {
     admin(state);
     const role = required(state, "roles", name);
-    if (role.trust !== "user") throw new Error("EC2 trust is fixed in this console subset; create another role for a different use case.");
-    role.trustedUser = trustedUser ? required(state, "users", trustedUser).name : "";
+    if (!["user", "ec2"].includes(trust)) throw new Error("Choose an IAM user or the EC2 service as the trusted entity.");
+    const userName = trust === "user" && trustedUser ? required(state, "users", trustedUser).name : "";
+    role.trust = trust;
+    role.trustedUser = userName;
+    if (trust === "ec2" && !role.profile) role.profile = role.name;
   }
 
   function remove(state, type, name, confirmation) {
@@ -227,9 +230,9 @@
     const request = { action: "sts:AssumeRole", resource: "arn:aws:iam::" + account + ":role/" + name };
     const permission = authorize(state, state.session, request);
     const checks = [
-      { label: "Caller identity policy allows sts:AssumeRole on this role", pass: permission.decision === "allowed" },
-      { label: "Role trust matches this IAM user", pass: role.trust === "user" && role.trustedUser === state.session.name },
-      { label: "Simulated MFA is present", pass: mfa === true }
+      { id: "caller", label: "Caller permission: " + state.session.name + " may call sts:AssumeRole on " + name, pass: permission.decision === "allowed", route: "users/" + encodeURIComponent(state.session.name), hint: permission.decision === "explicitDeny" ? "A policy explicitly denies this role assumption. Review the matching Deny in the trace; adding an Allow will not override it." : "As Lab administrator: Policies → Create policy → name it (for example AssumeBucketReader). Expand Start from a template → choose Assume role → select " + name + " → Apply template (replaces draft) → Review and create. Then Users → " + state.session.name + " → Permissions → attach it and Save permissions. The template replaces the default S3 grants with only sts:AssumeRole. Attach it to the user, not to the role." },
+      { id: "trust", label: "Role trust: " + name + " trusts " + state.session.name, pass: role.trust === "user" && role.trustedUser === state.session.name, route: "roles/" + encodeURIComponent(name), hint: "As Lab administrator: Roles → " + name + " → Trust relationships → Trusted entity: IAM user (with MFA) → Trusted IAM user: " + state.session.name + " → Save trust. Currently trusts " + (role.trust === "ec2" ? "the EC2 service" : role.trustedUser || "no user") + "." },
+      { id: "mfa", label: "Simulated MFA is present", pass: mfa === true, route: "switch-role", hint: "When switching roles manually, check Simulated MFA is present. The objective's with-MFA test supplies it automatically; the without-MFA test deliberately leaves it off." }
     ];
     const result = { decision: checks.every(function (check) { return check.pass; }) ? "allowed" : "implicitDeny", trace: permission.trace, checks: checks, request: request, principal: copy(state.session), success: checks.every(function (check) { return check.pass; }) };
     if (permission.decision === "explicitDeny") result.decision = "explicitDeny";
@@ -263,7 +266,8 @@
         let source = item;
         if (type === "roles" && item.trust === "user" && !item.trustedUser) source = Object.assign({}, item, { trust: "ec2" });
         const restored = create(state, type, source);
-        if (type === "roles" && source !== item) Object.assign(restored, { trust: "user", trustedUser: "", profile: "" });
+        if (type === "roles" && source !== item) Object.assign(restored, { trust: "user", trustedUser: "" });
+        if (type === "roles" && item.trust === "user") restored.profile = item.profile === item.name ? item.name : "";
         if (type === "buckets") {
           if (!Array.isArray(item.objects) || item.objects.length > 60) throw new Error("Saved object list is invalid.");
           item.objects.forEach(function (object) {

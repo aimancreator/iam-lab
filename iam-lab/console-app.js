@@ -10,6 +10,7 @@
   let toastTimer;
   let submitEditor;
   let bucketPrefix = "";
+  let objectiveId = "separate-teams";
 
   function escape(value) {
     return String(value == null ? "" : value).replace(/[&<>"']/g, function (character) {
@@ -77,15 +78,38 @@
   }
   function resourceLink(type, name) { return '<a href="' + link(type, name) + '">' + escape(name) + '</a>'; }
 
+  function assumptionChecklist(result) {
+    if (!result.checks) return "";
+    return '<section aria-label="Role assumption requirements"><h3>Three checks before a role session</h3><ul class="trace">' + result.checks.map(function (check) {
+      return '<li class="' + (check.pass ? "match" : "deny") + '"><strong>' + (check.pass ? "PASS · " : "NOT MET · ") + escape(check.label) + '</strong>' + (!check.pass ? '<p>' + escape(check.hint) + '</p><a href="#' + escape(check.route) + '">Open ' + (check.id === "caller" ? "user permissions" : check.id === "trust" ? "role trust" : "Switch role") + ' →</a>' : '') + '</li>';
+    }).join("") + '</ul>' + (result.pass ? '<p class="help">This request behaved as the objective expects. In the without-MFA test, MFA is deliberately absent and denial is the correct result.</p>' : '') + '</section>';
+  }
+
+  function trustFields(role) {
+    return '<label class="field">Trusted entity<select name="trust"><option value="ec2"' + (role.trust === "ec2" ? " selected" : "") + '>AWS service: EC2</option><option value="user"' + (role.trust === "user" ? " selected" : "") + '>IAM user (with MFA)</option></select></label><div data-user-trust' + (role.trust === "ec2" ? " hidden" : "") + '>' + select("Trusted IAM user", "trustedUser", state.users, role.trustedUser, "No trusted user") + '<p class="help">This lab requires MFA and caller permission to assume a user-trusted role.</p></div>';
+  }
+
   function renderChrome() {
     const current = route();
     document.getElementById("console-nav").innerHTML = '<div class="nav-title">PRACTICE ACCOUNT</div><a href="#home"' + (current.type === "home" ? ' class="active"' : '') + '>Console home</a><div class="nav-title">IDENTITY & ACCESS</div>' + ["users", "groups", "policies", "roles", "buckets", "instances"].map(function (type) {
       return (type === "buckets" ? '<div class="nav-title">STORAGE & COMPUTE</div>' : '') + '<a href="' + link(type) + '"' + (current.type === type ? ' class="active" aria-current="page"' : '') + '>' + (type === "buckets" ? "S3 buckets" : type === "instances" ? "EC2 instances" : labels[type]) + '<span class="nav-count">' + state[type].length + '</span></a>';
-    }).join("") + '<div class="nav-title">EXPERIMENT</div><a href="#switch-role">Switch role</a><a href="#history">Request history</a>';
+    }).join("") + '<div class="nav-title">EXPERIMENT</div><a href="#objectives"' + (current.type === "objectives" ? ' class="active" aria-current="page"' : '') + '>Objectives & checks</a><a href="#switch-role">Switch role</a><a href="#history">Request history</a>';
     const identity = document.getElementById("identity");
     identity.innerHTML = '<option value="">Lab administrator</option>' + options(state.users, state.session.kind === "user" ? state.session.name : "", null) + (state.session.kind === "role" ? '<option value="__role_session__" selected>Role: ' + escape(state.session.name) + '</option>' : '');
     if (state.session.kind === "admin") identity.value = "";
     renderCoach();
+    document.getElementById("coach").insertAdjacentHTML("afterbegin", '<a class="button objective-shortcut" href="#objectives">Check your objectives →</a>');
+  }
+
+  function objectivePage() {
+    const objective = window.IamObjectives.objectives.find(function (item) { return item.id === objectiveId; });
+    const report = window.IamObjectives.grade(state, objectiveId);
+    const status = report.status === "pass" ? "Objective met" : report.status === "blocked" ? "Setup needed" : "Not met yet";
+    const checksHtml = report.results.map(function (result) {
+      const label = result.status === "pass" ? "PASS" : result.status === "blocked" ? "BLOCKED" : "FAIL";
+      return '<li class="objective-check ' + result.status + '"><div class="objective-check-title"><span class="pill ' + (result.status === "pass" ? "green" : "orange") + '">' + label + '</span><h3>' + escape(result.title) + '</h3></div><dl class="metadata"><div><dt>Expected</dt><dd>' + escape(result.expected) + '</dd></div><div><dt>Current result</dt><dd>' + escape(result.actual) + '</dd></div></dl>' + assumptionChecklist(result) + (result.status !== "pass" && !result.checks ? '<p>' + escape(result.hint) + '</p><a href="#' + escape(result.route) + '">Open ' + escape(result.route) + ' →</a>' : '') + (result.trace ? '<details><summary>Why this result?</summary>' + (result.request ? '<p><code>' + escape(result.request.action + " · " + result.request.resource) + '</code></p>' : '') + '<ul class="trace">' + (result.trace.length ? result.trace.map(function (entry) { return '<li class="' + (entry.matches ? entry.effect === "Deny" ? "deny" : "match" : "") + '"><strong>' + escape(entry.source + " / " + entry.sid) + '</strong><small>' + escape(entry.effect + ": " + entry.reason) + '</small></li>'; }).join("") : '<li>No applicable policy statements.</li>') + '</ul></details>' : '') + '</li>';
+    }).join("");
+    return heading("Objectives & checks", "Build the setup yourself, then see whether it meets the requirements.") + panel("Choose your objective", '<label for="objective-choice">Practice scenario</label><select id="objective-choice">' + window.IamObjectives.objectives.map(function (item) { return '<option value="' + item.id + '"' + (item.id === objectiveId ? " selected" : "") + '>' + escape(item.title) + '</option>'; }).join("") + '</select><h2 class="objective-title">' + escape(objective.title) + '</h2><p>' + escape(objective.brief) + '</p><details><summary>Setup hints and required names</summary><p>' + escape(objective.setup) + '</p><p>Each required bucket needs an object named example.txt. Use fictional text.</p></details>') + '<section class="panel" aria-label="Objective results"><div class="panel-header"><div role="status"><h2>' + status + '</h2><span>' + report.passed + ' / ' + report.total + ' checks passed</span></div>' + button("check-objective", "Check again", 'class="primary"') + '</div><div class="panel-body"><p>These results check your current local setup, regardless of the identity selected in the header. Checks do not change resources, sessions, history or guided progress.</p>' + (report.missing.length ? notice("Missing: " + report.missing.join("; "), "warning") : '') + '<ul class="objective-checks">' + checksHtml + '</ul></div></section>' + notice("Scenarios are separate targets: swapping access or adding a Deny can make an earlier objective stop passing. Results are recalculated whenever you open this page or click Check again. Only the listed requests are checked; this is not a full IAM security audit or a check of FakeCloud/live AWS.") + window.IamVisuals.card(objective.picture);
   }
 
   function renderCoach() {
@@ -143,8 +167,8 @@
     if (item.policies) content += permissions(type, item);
     if (type === "users") content += panel("Group memberships", state.groups.filter(function (group) { return group.members.includes(name); }).map(function (group) { return resourceLink("groups", group.name); }).join(" · ") || "No group memberships. Open User groups to assign a job.");
     if (type === "groups") content += panel("Users in this group", '<form data-form="membership">' + checks("users", "members", item.members) + '<div class="buttons"><button type="submit">Save membership</button></div></form>');
-    if (type === "policies") content += panel("Policy document", '<form data-form="policy"><label class="field">JSON<textarea name="document" rows="18" required>' + escape(JSON.stringify(item.document, null, 2)) + '</textarea></label><button type="submit">Save policy</button></form>');
-    if (type === "roles") content += panel("Trust relationships", json(engine.trustDocument(item)) + (item.trust === "user" ? '<form data-form="trust">' + select("Trusted IAM user", "trustedUser", state.users, item.trustedUser, "No trusted user") + '<p>MFA is required by this training trust policy.</p><button type="submit">Save trust</button></form>' : '<p>Trusts ec2.amazonaws.com. Instance profile: <code>' + escape(item.profile) + '</code>.</p>'));
+    if (type === "policies") content += panel("Policy document", '<form data-form="policy">' + window.IamPolicyEditor.render(item.document, state) + '<div class="buttons"><button class="primary" type="submit">Save policy</button></div></form>');
+    if (type === "roles") content += panel("Trust relationships", '<p>Change who can assume this existing role. Its name and attached permission policies stay the same.</p><form data-form="trust">' + trustFields(item) + notice("Replacing EC2 trust stops new EC2 credential requests in this simulator. Existing instance-profile associations remain; changing trust does not revoke an already-issued user role session. Selecting EC2 creates a same-named profile here if one is missing.") + '<button class="primary" type="submit">Save trust</button></form><h3>Saved trust policy</h3>' + json(engine.trustDocument(item)) + '<p>Instance profile: <code>' + escape(item.profile || "None") + '</code>. A profile association is separate from the trust policy.</p>');
     if (type === "instances") content += panel("Modify IAM role", '<div class="flow"><strong>' + escape(name) + '</strong><span>→ profile →</span><strong>' + escape(item.profile || "No role") + '</strong><span>→</span><strong>S3 permissions</strong></div><form data-form="associate">' + select("IAM role (instance profile)", "profile", state.roles.filter(function (role) { return role.profile; }), item.profile, "No IAM role") + '<button type="submit">Save IAM role</button></form>') + panel("Run a request from this application", requestForm("console-bucket-a", name));
     content += window.IamVisuals.card({ users: "user", groups: "rbac", policies: "policy", roles: "assume", instances: "ec2" }[type]) + deletion();
     return content;
@@ -153,6 +177,7 @@
   function renderPage() {
     const current = route();
     if (current.type === "home") main.innerHTML = home();
+    else if (current.type === "objectives") main.innerHTML = objectivePage();
     else if (current.type === "history") main.innerHTML = heading("Request history", "The most recent 100 requests in this browser. This is a learning log, not AWS CloudTrail.") + panel("Requests", table(["Identity", "Action", "Target", "Result"], state.history.map(function (entry) { return [escape(entry.actor), escape(entry.action), escape([entry.bucket, entry.key].filter(Boolean).join("/")), escape(entry.error || decisions[entry.decision])]; })));
     else if (current.type === "switch-role") main.innerHTML = heading("Switch role", "Assume means obtain a temporary role session. It does not mean attach a policy.") + panel("Assume an IAM role", notice("Select a user in Practice as identity first. This lab checks caller permission, account-delegation trust and simulated MFA.") + '<form data-form="assume">' + select("Role", "role", state.roles.filter(function (role) { return role.trust === "user"; })) + '<label class="check-row"><input type="checkbox" name="mfa">Simulated MFA is present</label><div class="buttons"><button class="primary" type="submit">Switch role</button></div></form>') + window.IamVisuals.card("assume");
     else if (engine.types.includes(current.type)) {
@@ -183,7 +208,7 @@
   }
 
   function policyFields() {
-    return '<label class="field">Template<select name="template"><option value="read">Read objects</option><option value="write">Read and upload objects</option><option value="deny">Explicit deny</option><option value="assume">Assume role</option></select></label>' + field("Bucket name for S3 template", "bucket", "console-bucket-a") + field("Object prefix (optional)", "prefix") + select("Role for Assume role template", "roleName", state.roles) + '<label class="check-row"><input type="checkbox" name="browse" checked>Allow browsing bucket names</label>' + button("generate-policy", "Generate JSON") + '<label class="field">Policy JSON<textarea name="document" rows="12" required>' + escape(JSON.stringify(engine.buildPolicy("read", "console-bucket-a"), null, 2)) + '</textarea><small>Change the template and select Generate JSON, or edit the JSON directly.</small></label>';
+    return '<details><summary>Start from a template (optional)</summary><label class="field">Template<select name="template"><option value="read">Read objects</option><option value="write">Read and upload objects</option><option value="deny">Explicit deny</option><option value="assume">Assume role</option></select></label>' + field("Bucket name for S3 template", "bucket", "console-bucket-a") + field("Object prefix (optional)", "prefix") + select("Role for Assume role template", "roleName", state.roles) + '<label class="check-row"><input type="checkbox" name="browse" checked>Allow browsing bucket names</label>' + button("generate-policy", "Apply template (replaces draft)") + '</details>' + window.IamPolicyEditor.render(engine.buildPolicy("read", "console-bucket-a"), state);
   }
 
   function createResource() {
@@ -192,7 +217,7 @@
     if (["users", "groups", "roles"].includes(type)) fields += '<h3>Permission policies</h3>' + checks("policies", "policies");
     if (type === "groups") fields += '<h3>Group members</h3>' + checks("users", "members");
     if (type === "policies") fields += policyFields();
-    if (type === "roles") fields += '<label class="field">Trusted entity<select name="trust"><option value="ec2">AWS service: EC2</option><option value="user">IAM user (with MFA)</option></select></label>' + select("Trusted user (only for IAM user trust)", "trustedUser", state.users) + notice("An EC2 role receives a same-named instance profile in this simulator.");
+    if (type === "roles") fields += trustFields({ trust: "ec2", trustedUser: "" }) + notice("An EC2 role receives a same-named instance profile in this simulator.");
     if (type === "instances") fields += select("IAM role", "profile", state.roles.filter(function (role) { return role.profile; }), "", "No IAM role") + notice("Only the IAM part of launching an instance is simulated. No compute, AMI, network or cost is created.");
     if (type === "buckets") fields += '<label class="check-row"><input type="checkbox" checked disabled>Block all public access (always enabled)</label>' + notice("Use 3–63 lowercase letters, numbers or hyphens. Names are unique only within this browser’s practice account.");
     editor("Create " + singular[type], '<div class="wizard-steps"><strong>1. Configure</strong><span>2. Review and create</span></div>' + fields, function (data) {
@@ -236,17 +261,18 @@
       const action = target.dataset.action;
       if (action === "close") target.closest("dialog").close();
       if (action === "create") createResource();
+      if (action === "check-objective") { render(); toast("Objective checked against the current setup."); }
       if (action === "guided" || action === "free") { state.mode = action; save(); renderCoach(); }
       if (action === "generate-policy") {
         const form = target.closest("form");
         const data = new FormData(form);
-        form.elements.document.value = JSON.stringify(engine.buildPolicy(data.get("template"), data.get("bucket"), data.get("prefix"), data.has("browse"), data.get("roleName")), null, 2);
+        form.querySelector("[data-policy-editor]").outerHTML = window.IamPolicyEditor.render(engine.buildPolicy(data.get("template"), data.get("bucket"), data.get("prefix"), data.has("browse"), data.get("roleName")), state);
       }
       if (action === "upload") editor("Upload fictional text", field("Object key", "key", "example.txt") + '<label class="field">Object text<textarea name="body" maxlength="4096" rows="5">Hello from my practice bucket.</textarea></label>', function (data) { runRequest({ action: "s3:PutObject", bucket: current.name, key: data.get("key"), body: data.get("body") }); }, "Upload");
       if (action === "read-object") runRequest({ action: "s3:GetObject", bucket: current.name, key: target.dataset.key });
       if (action === "delete-object") confirmAction("Delete object", '<p>Delete <strong>' + escape(target.dataset.key) + '</strong> from this practice bucket?</p>', function () { runRequest({ action: "s3:DeleteObject", bucket: current.name, key: target.dataset.key }); });
       if (action === "delete") confirmAction("Delete " + singular[current.type], field("Type the exact resource name", "confirmation", "", current.name), function (data) { engine.remove(state, current.type, current.name, data.get("confirmation")); save(); location.hash = link(current.type); toast("Resource deleted"); });
-      if (action === "reset") confirmAction("Restart this practice", '<p>Clear this console’s resources and exercise progress. The original learning lab keeps its progress.</p>' + field("Type RESET to restart", "confirmation"), function (data) { if (data.get("confirmation") !== "RESET") throw new Error("Type RESET to confirm."); state = engine.freshState(); bucketPrefix = ""; save(); location.hash = "#home"; render(); toast("Fresh practice account ready"); });
+      if (action === "reset") confirmAction("Reset practice and start over?", '<p>This removes all users, groups, policies, roles, buckets, objects and instances in this console. It also clears request history and guided progress, and returns you to Lab administrator.</p><p>Your original learning lab keeps its progress. FakeCloud and real AWS resources are unaffected.</p>' + field("Type RESET to start over", "confirmation"), function (data) { if (data.get("confirmation") !== "RESET") throw new Error("Type RESET to confirm."); state = engine.freshState(); bucketPrefix = ""; objectiveId = "separate-teams"; save(); location.hash = "#home"; render(); toast("Practice reset. Your empty account is ready."); });
     } catch (error) { toast(error.message, true); }
   });
 
@@ -256,6 +282,7 @@
     const data = new FormData(form);
     const current = route();
     try {
+      if (form.querySelector("[data-policy-editor]")) data.set("document", JSON.stringify(window.IamPolicyEditor.read(form)));
       if (form.id === "editor-form") {
         if (submitEditor(data) !== false) { document.getElementById("editor-dialog").close(); render(); }
         return;
@@ -275,7 +302,7 @@
       if (kind === "membership") engine.membership(state, current.name, data.getAll("members"));
       if (kind === "policy") engine.editPolicy(state, current.name, data.get("document"));
       if (kind === "associate") engine.associate(state, current.name, data.get("profile"));
-      if (kind === "trust") engine.editTrust(state, current.name, data.get("trustedUser"));
+      if (kind === "trust") engine.editTrust(state, current.name, data.get("trustedUser"), data.get("trust"));
       if (kind === "assume") { const result = engine.assume(state, data.get("role"), data.has("mfa")); save(); render(); showResult(result); return; }
       save(); render(); toast("Saved. Test a request to see the effect.");
     } catch (error) {
@@ -288,8 +315,17 @@
     try { engine.signIn(state, event.target.value); save(); render(); toast("Practising as " + state.session.name); }
     catch (error) { toast(error.message, true); }
   });
+  document.addEventListener("change", function (event) {
+    if (event.target.name === "trust") {
+      const userFields = event.target.closest("form").querySelector("[data-user-trust]");
+      if (userFields) userFields.hidden = event.target.value !== "user";
+    }
+  });
   document.getElementById("coach").addEventListener("change", function (event) {
     if (event.target.id === "chapter") { state.chapter = event.target.value; save(); renderCoach(); }
+  });
+  main.addEventListener("change", function (event) {
+    if (event.target.id === "objective-choice") { objectiveId = event.target.value; render(); document.getElementById("objective-choice").focus(); }
   });
   document.getElementById("reset-console").addEventListener("click", function () { document.querySelector('#coach [data-action="reset"]').click(); });
   window.addEventListener("hashchange", function () { bucketPrefix = ""; render(); main.focus(); });

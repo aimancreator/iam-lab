@@ -8,13 +8,23 @@ Open **index.html** in a browser. The lab works locally without installing packa
 
 For a local web address, run this from the parent AWS workspace:
 
-    python3 -m http.server 8765 --bind 127.0.0.1 --directory iam-lab
+    python3 -m http.server 8765 --bind 127.0.0.1 --directory .
 
-Then visit **http://127.0.0.1:8765**. Stop the server with Ctrl+C when finished.
+Then visit **http://127.0.0.1:8765/iam-lab/**. Serving the parent workspace also makes the separate networking lab available at **http://127.0.0.1:8765/vpc-lab/**. Stop the server with Ctrl+C when finished. If an older server is serving only `iam-lab` on this port, stop it before restarting from the parent workspace.
 
 ## Practice tracks
 
+**Repository Lab 02 — VPC & Networking**
+
+Open `../vpc-lab/index.html` or select **Lab 02 · VPC networking** in the header. Build a VPC and four subnets across two AZs, configure routes and simulated NAT, experiment with security groups and numbered NACL rules, add an S3 gateway endpoint, and trace TCP requests and replies. Every section includes a picture recap. Seven objectives check your configuration and understanding. Matching AWS steps use manual confirmations and skip compute/NAT provisioning; `../vpc-lab/VPC-GUIDE.md` explains scope, source mapping, costs and cleanup. Networking has its own folder, styles, saved progress and reset button.
+
+**Visual policy editing**
+
+The practice console now supports Visual and JSON modes when creating or editing policies. Select Read, Upload, Delete and other supported actions, choose Allow or Deny, and scope each block to a bucket/prefix or role. Advanced existing statements are preserved. Save applies changes; unchecked actions are not explicit denies.
+
 **AWS-style practice console — separate tab**
+
+**Objectives & checks** in the console sidebar adds six automatically graded scenarios: separate team access, swapped buckets, RBAC transfer, explicit deny, MFA role assumption and EC2 application access. Each shows expected versus actual results, policy traces, and fix hints. Checks reevaluate the current local setup and do not rely on old exercise completions or connect to AWS/FakeCloud.
 
 Select **Practice console** in the header or open `CONSOLE.html`. Create users, groups, JSON policies, roles, private S3 buckets and simulated EC2 instances through console-style forms. Switch identities, send object requests, inspect policy traces, and follow two guided paths covering user/bucket access, RBAC transfers, explicit deny, role assumption and EC2 instance profiles. A free-practice mode, picture summaries, request history and a separate reset support repetition. Progress is local and separate from the original lab. See `CONSOLE-GUIDE.md` for scope and explanations.
 

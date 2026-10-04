@@ -15,7 +15,7 @@
 
 Open `index.html#repo` or select **Repository Lab 01**. Follow the six numbered steps in **Interactive simulation**, then use **Matching AWS steps** for the corresponding real-account exercise.
 
-Only the IAM track is adapted here. The other labs in the downloaded repository are reference material, not newly implemented interactive courses.
+The IAM track is adapted here. Lab 02 is available in the sibling folder at `../vpc-lab/index.html`; see `../vpc-lab/VPC-GUIDE.md` for its source mapping and corrections. The remaining repository labs are reference material, not implemented interactive courses.
 
 ## Source-to-exercise map
 
