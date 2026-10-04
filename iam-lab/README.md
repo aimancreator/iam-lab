@@ -14,6 +14,10 @@ Then visit **http://127.0.0.1:8765**. Stop the server with Ctrl+C when finished.
 
 ## Practice tracks
 
+**AWS-style practice console — separate tab**
+
+Select **Practice console** in the header or open `CONSOLE.html`. Create users, groups, JSON policies, roles, private S3 buckets and simulated EC2 instances through console-style forms. Switch identities, send object requests, inspect policy traces, and follow two guided paths covering user/bucket access, RBAC transfers, explicit deny, role assumption and EC2 instance profiles. A free-practice mode, picture summaries, request history and a separate reset support repetition. Progress is local and separate from the original lab. See `CONSOLE-GUIDE.md` for scope and explanations.
+
 **Start with pictures**
 
 Open `VISUAL-GUIDE.html`, or select **Picture guide** in the lab header. It introduces 21 ideas one at a time, with a friendly overview illustration, labelled diagrams, and one-sentence explanations. Every core mission and repository lesson now ends with a **Picture summary**. RBAC sections and scenarios, manual AWS steps, and the EC2/multi-user extensions also include visual recaps.
