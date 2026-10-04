@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>IAM Field Lab — Learn by doing</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="iam-engine.js" defer></script>
+  <script src="visual-summaries.js" defer></script>
+  <script src="ec2-lesson.js" defer></script>
+  <script src="matrix-lesson.js" defer></script>
+  <script src="aws-guide.js" defer></script>
+  <script src="repo-engine.js" defer></script>
+  <script src="repo-aws.js" defer></script>
+  <script src="repo-lesson.js" defer></script>
+  <script src="rbac-engine.js" defer></script>
+  <script src="rbac-aws.js" defer></script>
+  <script src="rbac-lesson.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to lab</a>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html" aria-label="IAM Field Lab home"><span class="brand-mark">iam<span>.</span></span><span>FIELD LAB<br><small>CLOUD FUNDAMENTALS</small></span></a>
+      <p class="sidebar-label">YOUR LEARNING PATH</p>
+      <nav id="mission-nav" aria-label="Lab missions"></nav>
+      <div class="sidebar-bottom">
+        <div class="progress-caption"><span>Lab progress</span><span id="progress-label">0 / 9</span></div>
+        <progress id="progress" max="9" value="0" aria-label="Completed missions"></progress>
+        <p>Small permissions.<br>Big understanding.</p>
+        <button id="restart" class="quiet-button" type="button">Restart simulator</button>
+      </div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <span class="breadcrumb">AWS / Identity &amp; Access Management</span>
+        <div class="mode-switch" role="group" aria-label="Practice mode">
+          <button id="simulator-mode" type="button" aria-pressed="true">Simulator</button>
+          <button id="aws-mode" type="button" aria-pressed="false">In my AWS account ↗</button>
+          <button id="repo-mode" type="button" aria-pressed="false">Repository Lab 01</button>
+          <button id="rbac-mode" type="button" aria-pressed="false">RBAC workshop</button>
+          <a href="VISUAL-GUIDE.html" target="_blank" rel="noopener">Picture guide ↗</a>
+        </div>
+      </header>
+      <main id="main" tabindex="-1"></main>
+      <footer>
+        <span>Independent learning lab · AWS documentation checked October 2026</span>
+        <a href="README.md" target="_blank" rel="noopener">Lab notes &amp; sources ↗</a>
+      </footer>
+    </div>
+  </div>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <dialog id="reset-dialog">
+    <h2>Start a fresh simulator?</h2>
+    <p>This clears all simulator progress, including the repository and RBAC tracks. AWS settings and the original/repository checklists are kept. RBAC confirmations reset because its assignments reset.</p>
+    <div class="button-row"><button id="cancel-reset" type="button" class="secondary">Keep my progress</button><button id="confirm-reset" type="button" class="primary">Restart simulator</button></div>
+  </dialog>
+  <noscript>This interactive lab needs JavaScript. Enable it, then reload this page. The AWS walkthrough is also available in AWS-WALKTHROUGH.md.</noscript>
+</body>
+</html>

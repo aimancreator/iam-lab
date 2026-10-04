@@ -1,0 +1,4 @@
+Welcome to your IAM lab.
+
+Your learner can read this training file through its group policy.
+The upload role cannot read this file because it is outside training/uploads/.

@@ -1,0 +1,5 @@
+This is a tiny practice file.
+
+Upload it to training/uploads/starter.txt.
+Both the learner and the upload role may read it.
+Both have an explicit deny on deleting it.

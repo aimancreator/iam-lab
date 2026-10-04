@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Practice Console — IAM Field Lab</title>
+  <link rel="stylesheet" href="console.css">
+  <script src="iam-engine.js" defer></script>
+  <script src="visual-summaries.js" defer></script>
+  <script src="console-engine.js" defer></script>
+  <script src="console-app.js" defer></script>
+</head>
+<body>
+  <a href="#console-main" class="skip-link">Skip to console</a>
+  <div class="simulation-banner"><strong>SIMULATOR</strong> Independent AWS-style practice · No real resources, credentials, or charges · <a href="index.html" target="_blank" rel="noopener">Original learning lab ↗</a></div>
+  <header class="console-header">
+    <a class="console-brand" href="#home">practice<span>console</span><small>IAM FIELD LAB</small></a>
+    <form id="service-search"><label class="sr-only" for="service-query">Find a service</label><input id="service-query" type="search" list="service-list" placeholder="Search IAM, S3, EC2…"><datalist id="service-list"><option value="IAM users"></option><option value="IAM user groups"></option><option value="IAM policies"></option><option value="IAM roles"></option><option value="S3 buckets"></option><option value="EC2 instances"></option></datalist><button type="submit">Go</button></form>
+    <span class="region">Singapore<br><small>ap-southeast-1</small></span>
+    <div class="identity-control"><label for="identity">Practice as identity</label><select id="identity"></select></div>
+  </header>
+  <div id="storage-warning" class="notice warning" role="alert" hidden></div>
+  <div class="console-layout">
+    <aside class="console-sidebar"><nav id="console-nav" aria-label="Services"></nav><div class="sidebar-note"><strong>Your safe practice account</strong><code>123456789012</code><p>Everything stays in this browser. Use fictional names and text only.</p><a href="CONSOLE-GUIDE.md" target="_blank" rel="noopener">Scope &amp; explanations ↗</a><button id="reset-console" type="button" class="quiet">Restart this practice</button></div></aside>
+    <main id="console-main" tabindex="-1"></main>
+    <aside id="coach" class="coach" aria-label="Practice coach"></aside>
+  </div>
+  <div id="console-status" class="toast" role="status" hidden></div>
+  <dialog id="editor-dialog" aria-labelledby="editor-title"></dialog>
+  <dialog id="result-dialog" aria-labelledby="result-title"></dialog>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title"></dialog>
+  <noscript>This local simulator needs JavaScript. Your original lab is unchanged.</noscript>
+</body>
+</html>
